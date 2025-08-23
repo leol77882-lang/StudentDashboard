@@ -1,17 +1,3 @@
-import pandas as pd
-from flask import Flask, jsonify
-
-app = Flask(__name__)
-
-# Use relative path so it works locally and on Render
-df = pd.read_excel("Student.xlsx")
-
-@app.route("/")
-def home():
-    return jsonify(df.to_dict(orient="records"))
-
-if __name__ == "__main__":
-    app.run(host="0.0.0.0", port=5000)
 import os
 import pandas as pd
 import dash
@@ -19,7 +5,7 @@ from dash import dcc, html
 import plotly.express as px
 
 # --- Path to your Excel file ---
-file_path = r"C:\Users\harih\Desktop\Student.xlsx"
+file_path = r"C:/Users/harih/Desktop/StudentDashboard/Student.xlsx"
 
 if not os.path.exists(file_path):
     raise FileNotFoundError(f"Excel file not found at: {file_path}")
@@ -31,18 +17,22 @@ df = pd.read_excel(file_path)
 df.columns = df.columns.str.strip()
 
 # --- Detect name column ---
-name_col = None
-for candidate in ["Name", "Student Name", "NAME", "Names"]:
-    if candidate in df.columns:
-        name_col = candidate
-        break
-
+name_candidates = ["Name", "Student Name", "NAME", "Names"]
+name_col = next((c for c in name_candidates if c in df.columns), None)
 if name_col is None:
     raise KeyError(f"No student name column found. Detected: {df.columns.tolist()}")
+
+# --- Detect essential columns ---
+required_cols = ["TOTAL", "GRADE"]
+for col in required_cols:
+    if col not in df.columns:
+        raise KeyError(f"Missing required column: {col}")
 
 # --- Identify subject columns (exclude non-subject fields) ---
 exclude_cols = [name_col, "Reg. No", "TOTAL", "AVG.", "MAX", "MIN", "GRADE"]
 subject_cols = [c for c in df.columns if c not in exclude_cols]
+if not subject_cols:
+    raise KeyError("No subject columns detected.")
 
 # --- Melt dataset for subject-wise analysis ---
 df_melted = df.melt(
@@ -87,8 +77,9 @@ fig_grade = px.pie(
 )
 
 # 4. Animated Scatterplot: Subject vs Total
+df_scatter = df_melted.merge(df[[name_col, "TOTAL"]], on=name_col)
 fig_scatter = px.scatter(
-    df_melted.merge(df[[name_col, "TOTAL"]], on=name_col),
+    df_scatter,
     x="Marks",
     y="TOTAL",
     color="Subject",
@@ -106,7 +97,6 @@ app.layout = html.Div([
         "color": "#2c3e50",
         "padding": "10px"
     }),
-
     html.Div([
         dcc.Graph(figure=fig_subjects),
         dcc.Graph(figure=fig_total),
@@ -117,5 +107,4 @@ app.layout = html.Div([
 
 # --- Run App ---
 if __name__ == "__main__":
-    # 👇 Runs on your PC + available to other devices on same WiFi (LAN)
     app.run(host="0.0.0.0", port=8050, debug=True)
