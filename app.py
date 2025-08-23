@@ -1,3 +1,17 @@
+import pandas as pd
+from flask import Flask, jsonify
+
+app = Flask(__name__)
+
+# Use relative path so it works locally and on Render
+df = pd.read_excel("Student.xlsx")
+
+@app.route("/")
+def home():
+    return jsonify(df.to_dict(orient="records"))
+
+if __name__ == "__main__":
+    app.run(host="0.0.0.0", port=5000)
 import os
 import pandas as pd
 import dash
@@ -5,7 +19,7 @@ from dash import dcc, html
 import plotly.express as px
 
 # --- Path to your Excel file ---
-file_path = r"C:\Users\harih\Desktop\StudentDashboard\Student.xlsx"
+file_path = r"C:\Users\harih\Desktop\Student.xlsx"
 
 if not os.path.exists(file_path):
     raise FileNotFoundError(f"Excel file not found at: {file_path}")
@@ -103,4 +117,5 @@ app.layout = html.Div([
 
 # --- Run App ---
 if __name__ == "__main__":
+    # 👇 Runs on your PC + available to other devices on same WiFi (LAN)
     app.run(host="0.0.0.0", port=8050, debug=True)
