@@ -1,5 +1,6 @@
 dash
+Flask
 pandas
-plotly
 openpyxl
 gunicorn
+plotly
