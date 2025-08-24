@@ -4,9 +4,10 @@ import dash
 from dash import dcc, html
 import plotly.express as px
 
-# --- Path to your Excel file ---
-file_path = r"C:/Users/harih/Desktop/StudentDashboard/Student.xlsx"
+# --- Path to Excel file (Relative path for Render & Local) ---
+file_path = "Student.xlsx"
 
+# ✅ Check if Excel file exists
 if not os.path.exists(file_path):
     raise FileNotFoundError(f"Excel file not found at: {file_path}")
 
@@ -16,7 +17,7 @@ df = pd.read_excel(file_path)
 # --- Clean column names (remove extra spaces) ---
 df.columns = df.columns.str.strip()
 
-# --- Detect name column ---
+# --- Detect Name column ---
 name_candidates = ["Name", "Student Name", "NAME", "Names"]
 name_col = next((c for c in name_candidates if c in df.columns), None)
 if name_col is None:
@@ -28,7 +29,7 @@ for col in required_cols:
     if col not in df.columns:
         raise KeyError(f"Missing required column: {col}")
 
-# --- Identify subject columns (exclude non-subject fields) ---
+# --- Identify subject columns ---
 exclude_cols = [name_col, "Reg. No", "TOTAL", "AVG.", "MAX", "MIN", "GRADE"]
 subject_cols = [c for c in df.columns if c not in exclude_cols]
 if not subject_cols:
@@ -45,7 +46,7 @@ df_melted = df.melt(
 # --- Initialize Dash App ---
 app = dash.Dash(__name__)
 
-# 1. Animated Subject-wise Marks
+# ✅ Subject-wise Animated Marks
 fig_subjects = px.bar(
     df_melted,
     x=name_col,
@@ -57,7 +58,7 @@ fig_subjects = px.bar(
     barmode="group"
 )
 
-# 2. Animated Total Marks by Grade
+# ✅ Animated Total Marks by Grade
 fig_total = px.bar(
     df,
     x=name_col,
@@ -68,7 +69,7 @@ fig_total = px.bar(
     title="🏆 Total Marks by Student (Animated by Grade)"
 )
 
-# 3. Grade Distribution Pie
+# ✅ Grade Distribution Pie
 fig_grade = px.pie(
     df,
     names="GRADE",
@@ -76,7 +77,7 @@ fig_grade = px.pie(
     hole=0.3
 )
 
-# 4. Animated Scatterplot: Subject vs Total
+# ✅ Animated Scatterplot: Subject vs Total
 df_scatter = df_melted.merge(df[[name_col, "TOTAL"]], on=name_col)
 fig_scatter = px.scatter(
     df_scatter,
@@ -90,7 +91,7 @@ fig_scatter = px.scatter(
     title="🔗 Subject Contribution to Total Marks"
 )
 
-# --- Layout ---
+# --- Dashboard Layout ---
 app.layout = html.Div([
     html.H1("📊 Students Performance Dashboard - 2025", style={
         "textAlign": "center",
@@ -107,4 +108,5 @@ app.layout = html.Div([
 
 # --- Run App ---
 if __name__ == "__main__":
-    app.run(host="0.0.0.0", port=8050, debug=True)
+    port = int(os.environ.get("PORT", 8050))  # ✅ Use Render's dynamic port
+    app.run(host="0.0.0.0", port=port, debug=True)
